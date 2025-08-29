@@ -1,4 +1,3 @@
-
 import os as _os
 
 try:
@@ -8,11 +7,12 @@ try:
     from typing import Tuple as _Tuple
 except Exception:
     raise ImportError(
-          "This script requires newer features of Python, as provided "
-          "by the dataclasses and typing modules. Please upgrade to "
-          "at least Python 3.6 and try again. If you are using "
-          "Python 3.6 then make sure that the 'dataclasses' module "
-          "has been installed.")
+        "This script requires newer features of Python, as provided "
+        "by the dataclasses and typing modules. Please upgrade to "
+        "at least Python 3.6 and try again. If you are using "
+        "Python 3.6 then make sure that the 'dataclasses' module "
+        "has been installed."
+    )
 
 
 try:
@@ -21,13 +21,16 @@ try:
         raise ImportError("Disabling numba")
 
     import numba as _numba
+
     _MIN_CHUNK_SIZE = 1000
 except Exception:
-    print("WARNING: numba is not available. This is used to accelerate "
-          "this script. We really recommend installing numba, "
-          "e.g. via `pip install numba` or `conda install numba` "
-          "as this will make this script run significantly (hundreds "
-          "of times!) faster.")
+    print(
+        "WARNING: numba is not available. This is used to accelerate "
+        "this script. We really recommend installing numba, "
+        "e.g. via `pip install numba` or `conda install numba` "
+        "as this will make this script run significantly (hundreds "
+        "of times!) faster."
+    )
 
     _MIN_CHUNK_SIZE = 10
 
@@ -51,13 +54,15 @@ except Exception:
 
         config = CONFIG()
 
+
 try:
     import numpy as _np
 except Exception:
     raise ImportError(
-          "This script requires numpy to accelerate key parts. "
-          "Please install numpy (e.g. via 'conda install numpy' or "
-          "'pip install numpy' and try again.")
+        "This script requires numpy to accelerate key parts. "
+        "Please install numpy (e.g. via 'conda install numpy' or "
+        "'pip install numpy' and try again."
+    )
 
 
 def _no_progress_bar(x, **kwargs):
@@ -81,7 +86,7 @@ except Exception:
 @_dataclass
 class Patterns:
     """This class holds all of the data relating to the patterns
-       that distinguish between varieties that will be searched
+    that distinguish between varieties that will be searched
     """
 
     """numpy 2D array of integers holding the patterns to be searched"""
@@ -119,23 +124,25 @@ class Patterns:
 
 def _get_pattern_from_array(array) -> str:
     """Return a pattern encoded as an integer array
-       into a string - this converts values less than
-       0 into x
+    into a string - this converts values less than
+    0 into x
     """
 
     # Common formats are A, B for homozygotes (AA and BB) and AB for
     # heterozygotes or 0,1,2 for hom AA, het AB and hom BB.
     # We're going to convert A AB B to 0,1,2 format from here on
 
-    values = {"0": "0",
-              "1": "1",
-              "2": "2",
-              0: "0",
-              1: "1",
-              2: "2",
-              "AB": "1",
-              "A": "0",
-              "B": "2"}
+    values = {
+        "0": "0",
+        "1": "1",
+        "2": "2",
+        0: "0",
+        1: "1",
+        2: "2",
+        "AB": "1",
+        "A": "0",
+        "B": "2",
+    }
 
     pattern = [values.get(x, "x") for x in array]
     return "".join(pattern)
@@ -143,14 +150,14 @@ def _get_pattern_from_array(array) -> str:
 
 def convert_vcf_to_genotypes(input_file: str) -> str:
     """Convert the passed input file in VCF format into the genotypes
-       format required by this program. This will write the output
-       file into a new file called '{input_file}.genotypes', and will
-       return that filename
+    format required by this program. This will write the output
+    file into a new file called '{input_file}.genotypes', and will
+    return that filename
 
-       input_file: str  The full path to the input file to convert
+    input_file: str  The full path to the input file to convert
 
-       returns:
-            The full path to the converted file
+    returns:
+         The full path to the converted file
     """
     import re
 
@@ -174,7 +181,7 @@ def convert_vcf_to_genotypes(input_file: str) -> str:
     parts = line.split("\t")
 
     if len(parts) < 10:
-        print(f"WARNING: Corruption on line {i+1} of the VCF file!")
+        print(f"WARNING: Corruption on line {i + 1} of the VCF file!")
         return None
 
     head = "\t".join(parts[9:])
@@ -193,7 +200,7 @@ def convert_vcf_to_genotypes(input_file: str) -> str:
         parts = line.split("\t")
 
         if len(parts) < 10:
-            print(f"WARNING: Corruption on line {i+1} of the VCF file!")
+            print(f"WARNING: Corruption on line {i + 1} of the VCF file!")
             FILE.close()
             os.unlink(output_file)
             return None
@@ -220,12 +227,13 @@ def convert_vcf_to_genotypes(input_file: str) -> str:
                 elif a == 1 and b == 1:
                     FILE.write("\t2")
                 else:
-                    print(f"WARNING: Unrecognised pattern {field} on "
-                          f"line {i+1}.")
+                    print(f"WARNING: Unrecognised pattern {field} on line {i + 1}.")
                     FILE.write("\t-1")
             else:
-                print(f"WARNING: Unrecognised pattern {field} on "
-                      f"line {i+1}. Expecting 0/1, 1|1, 0/0 or equivalent.")
+                print(
+                    f"WARNING: Unrecognised pattern {field} on "
+                    f"line {i + 1}. Expecting 0/1, 1|1, 0/0 or equivalent."
+                )
                 FILE.write("\t-1")
 
         FILE.write("\n")
@@ -236,24 +244,25 @@ def convert_vcf_to_genotypes(input_file: str) -> str:
     return output_file
 
 
-@_numba.jit(nopython=True, nogil=True, fastmath=True,
-            parallel=True, cache=True)
-def _calculate_mafs(data,
-                    min_call_rate: float = 0.9,
-                    min_maf: float = 0.001,
-                    print_progress: bool = False):
+@_numba.jit(nopython=True, nogil=True, fastmath=True, parallel=True, cache=True)
+def _calculate_mafs(
+    data,
+    min_call_rate: float = 0.9,
+    min_maf: float = 0.001,
+    print_progress: bool = False,
+):
     """Now loop over the distinct SNP patterns to calculate their
-       Minor Allele Frequency (MAF) score.
+    Minor Allele Frequency (MAF) score.
 
-        min_maf: MAF is minor allele frequency.  This is set to a low level
-                 to include as many markers as possible but exclude rare
-                 error calls. It probably needs optimising for your data.
+     min_maf: MAF is minor allele frequency.  This is set to a low level
+              to include as many markers as possible but exclude rare
+              error calls. It probably needs optimising for your data.
 
-       This will return a numpy array of the scores for all of the patterns.
-       in the order they appear in the data. A score of 0 is given for
-       any skipped or invalid patterns. Note that, for speed, the score is
-       returned as an array of integers. You need to divide this by the number
-       of varieties to get the proper MAF.
+    This will return a numpy array of the scores for all of the patterns.
+    in the order they appear in the data. A score of 0 is given for
+    any skipped or invalid patterns. Note that, for speed, the score is
+    returned as an array of integers. You need to divide this by the number
+    of varieties to get the proper MAF.
     """
     if data is None:
         return None
@@ -264,7 +273,7 @@ def _calculate_mafs(data,
     if nrows == 0 or ncols == 0:
         return None
 
-    mafs = _np.zeros((nrows), _np.int32)
+    mafs = _np.zeros((nrows), _np.int64)
 
     # Go through in parallel and calculate maf for
     # each pattern. Patterns that should be skipped
@@ -321,13 +330,11 @@ def _calculate_mafs(data,
 
 
 @_numba.jit(nopython=True, nogil=True, fastmath=True, cache=True)
-def _sort_patterns(data, mafs,
-                   max_markers: int,
-                   print_progress: bool = False):
+def _sort_patterns(data, mafs, max_markers: int, print_progress: bool = False):
     """Return a numpy array of indicies that would represent
-       the array of data sorted by maf. Note that this will
-       remove duplicates and anything that has a maf score
-       of zero
+    the array of data sorted by maf. Note that this will
+    remove duplicates and anything that has a maf score
+    of zero
     """
     nrows: int = len(mafs)
     ncols: int = data.shape[1]
@@ -349,8 +356,8 @@ def _sort_patterns(data, mafs,
     if mafs[sorted_idxs[0]] == 0:
         return (None, None, None)
 
-    order = _np.full(nrows, fill_value=-1, dtype=_np.int32)
-    duplicates = _np.full(nrows, fill_value=-1, dtype=_np.int32)
+    order = _np.full(nrows, fill_value=-1, dtype=_np.int64)
+    duplicates = _np.full(nrows, fill_value=-1, dtype=_np.int64)
 
     order[0] = sorted_idxs[0]
     npatterns: int = 1
@@ -358,9 +365,8 @@ def _sort_patterns(data, mafs,
 
     for i in range(1, nrows):
         if npatterns >= max_markers:
-            if i != nrows-1:
-                print("Maximum marker count reached! "
-                      "Ignoring further markers.")
+            if i != nrows - 1:
+                print("Maximum marker count reached! Ignoring further markers.")
                 break
 
         idx: int = sorted_idxs[i]
@@ -373,7 +379,7 @@ def _sort_patterns(data, mafs,
         # maf score?
         new_pattern: int = 1
 
-        for j in range(i-1, -1, -1):
+        for j in range(i - 1, -1, -1):
             last_idx: int = sorted_idxs[j]
 
             if maf != mafs[last_idx]:
@@ -407,7 +413,7 @@ def _sort_patterns(data, mafs,
     npatterns: int = len(order)
 
     # now copy the patterns, in order, to the output array
-    patterns = _np.zeros((npatterns, ncols), _np.int8)
+    patterns = _np.zeros((npatterns, ncols), _np.int64)
 
     for i in range(0, npatterns):
         idx = order[i]
@@ -418,31 +424,33 @@ def _sort_patterns(data, mafs,
     return (patterns, order, duplicates)
 
 
-def load_patterns(input_file: str,
-                  min_call_rate: float = 0.9,
-                  min_maf: float = 0.001,
-                  max_markers: int = 1000000000000,
-                  print_progress: bool = False) -> Patterns:
+def load_patterns(
+    input_file: str,
+    min_call_rate: float = 0.9,
+    min_maf: float = 0.001,
+    max_markers: int = 1000000000000,
+    print_progress: bool = False,
+) -> Patterns:
     """Load all of the patterns from the passed file.
-       The patterns will be converted to the correct format,
-       including cleaning / conversion of A, B, AB converted
-       to 0, 1, 2 format.
+    The patterns will be converted to the correct format,
+    including cleaning / conversion of A, B, AB converted
+    to 0, 1, 2 format.
 
-       min_call_rate: Ignore markers with less than this proportion
-                      of valid (0, 1 of 2 ) calls.
+    min_call_rate: Ignore markers with less than this proportion
+                   of valid (0, 1 of 2 ) calls.
 
-       min_maf: Ignore patterns with a MAF below this value
+    min_maf: Ignore patterns with a MAF below this value
 
-       max_markers: Ignore more than this number of patterns
-                    (extra patterns with lower MAFs will be ignored)
+    max_markers: Ignore more than this number of patterns
+                 (extra patterns with lower MAFs will be ignored)
 
-       print_progress: Print the progress of reading / processing
-                       the patterns to the screen. If False then
-                       this function will not print anything.
+    print_progress: Print the progress of reading / processing
+                    the patterns to the screen. If False then
+                    this function will not print anything.
 
-       This will return a valid Patterns object that will contain
-       all of the data for the patterns, sorted in decreasing
-       MAF order
+    This will return a valid Patterns object that will contain
+    all of the data for the patterns, sorted in decreasing
+    MAF order
     """
     # Read in the data - assume this is comma separated for now. Can
     # easily add a test to change to tab separated if needed
@@ -468,7 +476,7 @@ def load_patterns(input_file: str,
     nrows = len(lines) - 1
     ncols = len(varieties)
 
-    data = _np.full((nrows, ncols), -1, _np.int8)
+    data = _np.full((nrows, ncols), -1, _np.int64)
 
     if print_progress:
         print(f"Reading {nrows} patterns for {ncols} varieties...")
@@ -478,21 +486,20 @@ def load_patterns(input_file: str,
 
     npatterns = 0
 
-    irow = _np.full(ncols, -1, _np.int8)
+    irow = _np.full(ncols, -1, _np.int64)
 
-    for i in progress(range(1, nrows+1), unit="patterns", delay=1):
+    for i in progress(range(1, nrows + 1), unit="patterns", delay=1):
         parts = list(csv.reader([lines[i]], dialect=dialect))[0]
 
-        if len(parts) != ncols+1:
-            print("WARNING - invalid row! "
-                  f"'{parts}' : {len(parts)} vs {ncols}")
+        if len(parts) != ncols + 1:
+            print(f"WARNING - invalid row! '{parts}' : {len(parts)} vs {ncols}")
         else:
             ids.append(parts[0])
-            row = _np.asarray(parts[1:], _np.string_)
+            row = _np.asarray(parts[1:], _np.bytes_)
             pattern = data[npatterns]
-            pattern[(row == b'0') | (row == b'A')] = 0
-            pattern[(row == b'1') | (row == b'AB')] = 1
-            pattern[(row == b'2') | (row == b'B')] = 2
+            pattern[(row == b"0") | (row == b"A")] = 0
+            pattern[(row == b"1") | (row == b"AB")] = 1
+            pattern[(row == b"2") | (row == b"B")] = 2
 
             npatterns += 1
 
@@ -500,23 +507,31 @@ def load_patterns(input_file: str,
         print(f"Successfully read {npatterns} patterns.\n")
         print(f"Calculating MAFs, removing duplicates and sorting patterns...")
 
-    mafs = _calculate_mafs(data, min_call_rate=min_call_rate,
-                           min_maf=min_maf, print_progress=print_progress)
+    mafs = _calculate_mafs(
+        data,
+        min_call_rate=min_call_rate,
+        min_maf=min_maf,
+        print_progress=print_progress,
+    )
 
     if print_progress:
         num_eliminated: int = len(mafs[mafs == 0])
-        print("\nNumber of eliminated patterns (by min_call_rate, min_maf or "
-              f"requiring more than one allele) is {num_eliminated}.")
+        print(
+            "\nNumber of eliminated patterns (by min_call_rate, min_maf or "
+            f"requiring more than one allele) is {num_eliminated}."
+        )
 
-    (patterns, order, dups) = _sort_patterns(data, mafs,
-                                             max_markers=max_markers,
-                                             print_progress=print_progress)
+    (patterns, order, dups) = _sort_patterns(
+        data, mafs, max_markers=max_markers, print_progress=print_progress
+    )
 
     if patterns is None:
         if print_progress:
-            print("\nWARNING! There are no patterns that exceeded "
-                  f"the required criteria (min_maf = {min_maf}, "
-                  f"min_call_rate = {min_call_rate}).\n")
+            print(
+                "\nWARNING! There are no patterns that exceeded "
+                f"the required criteria (min_maf = {min_maf}, "
+                f"min_call_rate = {min_call_rate}).\n"
+            )
         return None
 
     sorted_ids = []
@@ -532,10 +547,12 @@ def load_patterns(input_file: str,
             same = _np.array_equal(data[dup], data[i])
 
             if not same:
-                print("WARNING: Program bug. Two patterns which are "
-                      "flagged as identical aren't the same! "
-                      f"{dup} and {i}")
-                assert(same)
+                print(
+                    "WARNING: Program bug. Two patterns which are "
+                    "flagged as identical aren't the same! "
+                    f"{dup} and {i}"
+                )
+                assert same
 
             canonical = ids[dup]
 
@@ -545,29 +562,32 @@ def load_patterns(input_file: str,
                 duplicates[canonical] = [ids[i]]
 
     if print_progress:
-        print(f"\nLoaded marker data for {patterns.shape[0]} "
-              "distinct patterns that have a sufficiently high "
-              "MAF and call rate to be worth including.")
+        print(
+            f"\nLoaded marker data for {patterns.shape[0]} "
+            "distinct patterns that have a sufficiently high "
+            "MAF and call rate to be worth including."
+        )
 
-    assert(len(sorted_ids) == patterns.shape[0])
-    assert(len(varieties) == patterns.shape[1])
+    assert len(sorted_ids) == patterns.shape[0]
+    assert len(varieties) == patterns.shape[1]
 
-    return Patterns(patterns=patterns,
-                    ids=sorted_ids,
-                    varieties=varieties,
-                    mafs=sorted_mafs,
-                    duplicates=duplicates)
+    return Patterns(
+        patterns=patterns,
+        ids=sorted_ids,
+        varieties=varieties,
+        mafs=sorted_mafs,
+        duplicates=duplicates,
+    )
 
 
-@_numba.jit(nopython=True, nogil=True, fastmath=True,
-            parallel=True, cache=True)
+@_numba.jit(nopython=True, nogil=True, fastmath=True, parallel=True, cache=True)
 def _calculate_best_possible_score(patterns, start: int, end: int):
     """Calculate the best possible score that could be achieved
-       using all of the patterns
+    using all of the patterns
     """
     npatterns: int = patterns.shape[0]
 
-    score: int = 0 # reduction variable
+    score: int = 0  # reduction variable
     # see http://numba.pydata.org/numba-doc/0.12.1/prange.html?highlight=parallel
     # for variable privatization rules
     for i in _numba.prange(start, end):
@@ -577,22 +597,23 @@ def _calculate_best_possible_score(patterns, start: int, end: int):
                 jval: int = patterns[p, j]
                 if ival != -1 and jval != -1 and ival != jval:
                     score += 1
-                    break # stop early if cell contains a one
+                    break  # stop early if cell contains a one
 
     return score
 
 
-def calculate_best_possible_score(patterns: Patterns,
-                                  print_progress: bool = False) -> int:
+def calculate_best_possible_score(
+    patterns: Patterns, print_progress: bool = False
+) -> int:
     """Calculate the best possible score for the passed Patterns
-       object.
+    object.
 
-       patterns: The Patterns object containing the patterns to search
+    patterns: The Patterns object containing the patterns to search
 
-       print_progress: Whether or not to print any progress status
-                       to output
+    print_progress: Whether or not to print any progress status
+                    to output
 
-       This returns the best possible score
+    This returns the best possible score
     """
 
     if type(patterns) != Patterns:
@@ -611,7 +632,7 @@ def calculate_best_possible_score(patterns: Patterns,
 
     nchunks: int = int(ncols / chunk_size)
 
-    while nchunks*chunk_size < ncols:
+    while nchunks * chunk_size < ncols:
         nchunks += 1
 
     if nchunks < 4:
@@ -621,19 +642,18 @@ def calculate_best_possible_score(patterns: Patterns,
 
     score: int = 0
 
-    for i in progress(range(0, nchunks), delay=1,
-                      unit="variety", unit_scale=chunk_size):
+    for i in progress(
+        range(0, nchunks), delay=1, unit="variety", unit_scale=chunk_size
+    ):
         start: int = i * chunk_size
-        end: int = min((i+1)*chunk_size, ncols)
+        end: int = min((i + 1) * chunk_size, ncols)
         score += _calculate_best_possible_score(patterns, start, end)
 
     return score
 
 
-@_numba.jit(nopython=True, nogil=True, fastmath=True,
-            parallel=True, cache=True)
-def _chunked_first_score_patterns(patterns, skip_patterns,
-                                  scores, start, end):
+@_numba.jit(nopython=True, nogil=True, fastmath=True, parallel=True, cache=True)
+def _chunked_first_score_patterns(patterns, skip_patterns, scores, start, end):
     ncols: int = patterns.shape[1]
 
     for p in _numba.prange(start, end):
@@ -641,11 +661,11 @@ def _chunked_first_score_patterns(patterns, skip_patterns,
             score: int = 0
 
             # If we were to sort the rows by value the resulting scoring
-            # matrix would be a matrix of ones, with a block diagonal of 
+            # matrix would be a matrix of ones, with a block diagonal of
             # zeros, each block being having the dimension corresponding to
             # the count of the identifer. We can therefore skip the O(n^2)
             # visiting each element and instead calculate the score directly.
-            bins = _np.zeros(4, _np.int32)
+            bins = _np.zeros(4, _np.int64)
             for i in range(0, ncols):
                 # Here we take advantage of the identifiers being -1, 0, 1, 2 to
                 # use them to directly index the counter. We take advanage of
@@ -664,15 +684,14 @@ def _chunked_first_score_patterns(patterns, skip_patterns,
                 skip_patterns[p] = 1
 
 
-def _first_score_patterns(patterns, skip_patterns,
-                          print_progress: bool = True):
+def _first_score_patterns(patterns, skip_patterns, print_progress: bool = True):
     """Do the work of scoring all of the passed patterns against
-       the current value of the matrix. This returns a tuple
-       of the best score and the index of the pattern with
-       that best score
+    the current value of the matrix. This returns a tuple
+    of the best score and the index of the pattern with
+    that best score
     """
     npatterns: int = patterns.shape[0]
-    scores = _np.zeros(npatterns, _np.int32)
+    scores = _np.zeros(npatterns, _np.int64)
 
     if print_progress:
         chunk_size = min(_MIN_CHUNK_SIZE, npatterns)
@@ -683,7 +702,7 @@ def _first_score_patterns(patterns, skip_patterns,
 
     nchunks: int = int(npatterns / chunk_size)
 
-    while nchunks*chunk_size < npatterns:
+    while nchunks * chunk_size < npatterns:
         nchunks += 1
 
     if nchunks < 4:
@@ -691,12 +710,12 @@ def _first_score_patterns(patterns, skip_patterns,
         chunk_size = npatterns
         progress = _no_progress_bar
 
-    for i in progress(range(0, nchunks), delay=1,
-                      unit="patterns", unit_scale=chunk_size):
+    for i in progress(
+        range(0, nchunks), delay=1, unit="patterns", unit_scale=chunk_size
+    ):
         start: int = i * chunk_size
-        end: int = min((i+1)*chunk_size, npatterns)
-        _chunked_first_score_patterns(patterns, skip_patterns,
-                                      scores, start, end)
+        end: int = min((i + 1) * chunk_size, npatterns)
+        _chunked_first_score_patterns(patterns, skip_patterns, scores, start, end)
 
     return scores
 
@@ -704,14 +723,14 @@ def _first_score_patterns(patterns, skip_patterns,
 @_numba.jit(nopython=True, cache=True)
 def _unmatched_element_indices(pattern, expected_size):
     """Calculate the co-ordinates of the elements with value
-       zero in the matrix corresponding to the passed in pattern.
-       Returns
-       =======
-            indices : N x 2 numpy array containing row/column of each zero
+    zero in the matrix corresponding to the passed in pattern.
+    Returns
+    =======
+         indices : N x 2 numpy array containing row/column of each zero
     """
     indices = _np.empty((expected_size, 2), dtype=_np.int64)
     nele: int = pattern.size
-    idx: int = 0 # shared across iterations, so can't parallelise the loops
+    idx: int = 0  # shared across iterations, so can't parallelise the loops
     for i in range(0, nele):
         ival: int = pattern[i]
         for j in range(0, i):
@@ -721,23 +740,28 @@ def _unmatched_element_indices(pattern, expected_size):
                 indices[idx, 1] = j
                 idx += 1
 
-    assert(idx == expected_size)
+    assert idx == expected_size
 
     return indices
 
 
-@_numba.jit(nopython=True, nogil=True, fastmath=True,
-            parallel=True, cache=True)
-def _chunked_rescore_patterns(patterns, indices, skip_patterns,
-                              scores, sorted_idxs,
-                              best_score: int,
-                              start: int, end: int):
+@_numba.jit(nopython=True, nogil=True, fastmath=True, parallel=True, cache=True)
+def _chunked_rescore_patterns(
+    patterns,
+    indices,
+    skip_patterns,
+    scores,
+    sorted_idxs,
+    best_score: int,
+    start: int,
+    end: int,
+):
     ncols: int = patterns.shape[1]
     nidx: int = indices.shape[0]
 
     nthreads: int = _numba.config.NUMBA_NUM_THREADS
 
-    best_scores = _np.zeros(nthreads, _np.int32)
+    best_scores = _np.zeros(nthreads, _np.int64)
 
     for thread_id in _numba.prange(0, nthreads):
         my_best_score: int = best_score
@@ -764,7 +788,7 @@ def _chunked_rescore_patterns(patterns, indices, skip_patterns,
 
             for idx in range(0, nidx):
                 i: int = indices[idx, 0]
-                j: int  = indices[idx, 1]
+                j: int = indices[idx, 1]
                 ival: int = patterns[p, i]
                 jval: int = patterns[p, j]
                 if ival != -1 and jval != -1 and ival != jval:
@@ -789,12 +813,13 @@ def _chunked_rescore_patterns(patterns, indices, skip_patterns,
     return best_score
 
 
-def _rescore_patterns(patterns, indices, skip_patterns, scores, sorted_idxs,
-                      print_progress: bool = False):
+def _rescore_patterns(
+    patterns, indices, skip_patterns, scores, sorted_idxs, print_progress: bool = False
+):
     """Do the work of scoring all of the passed patterns against
-       the current value of the matrix. This returns a tuple
-       of the best score and the index of the pattern with
-       that best score
+    the current value of the matrix. This returns a tuple
+    of the best score and the index of the pattern with
+    that best score
     """
     npatterns: int = patterns.shape[0]
 
@@ -807,7 +832,7 @@ def _rescore_patterns(patterns, indices, skip_patterns, scores, sorted_idxs,
 
     nchunks: int = int(npatterns / chunk_size)
 
-    while nchunks*chunk_size < npatterns:
+    while nchunks * chunk_size < npatterns:
         nchunks += 1
 
     if nchunks < 4:
@@ -817,15 +842,21 @@ def _rescore_patterns(patterns, indices, skip_patterns, scores, sorted_idxs,
 
     best_score: int = 0
 
-    for i in progress(range(0, nchunks), delay=1,
-                      unit="patterns", unit_scale=chunk_size):
+    for i in progress(
+        range(0, nchunks), delay=1, unit="patterns", unit_scale=chunk_size
+    ):
         start: int = i * chunk_size
-        end: int = min((i+1)*chunk_size, npatterns)
-        best_score: int = _chunked_rescore_patterns(patterns, indices,
-                                                    skip_patterns,
-                                                    scores, sorted_idxs,
-                                                    best_score,
-                                                    start, end)
+        end: int = min((i + 1) * chunk_size, npatterns)
+        best_score: int = _chunked_rescore_patterns(
+            patterns,
+            indices,
+            skip_patterns,
+            scores,
+            sorted_idxs,
+            best_score,
+            start,
+            end,
+        )
 
     return _np.argsort(scores)[::-1]
 
@@ -833,16 +864,16 @@ def _rescore_patterns(patterns, indices, skip_patterns, scores, sorted_idxs,
 @_numba.jit(nopython=True, cache=True)
 def _remove_matched_indices(data, indices, num_fewer):
     """Removes indices from the input array corresponding to
-       ones in the matrix generated from the data array
-       Returns
-       =======
-            new_indices : N x 2 numpy array containing the new indices
+    ones in the matrix generated from the data array
+    Returns
+    =======
+         new_indices : N x 2 numpy array containing the new indices
     """
     num_old: int = indices.shape[0]
     new_size: int = num_old - num_fewer
     nrows: int = data.shape[0]
     new_indices = _np.empty((new_size, 2), dtype=_np.int64)
-    new_idx: int = 0 # shared accross iterations, so can't parallelise the loop
+    new_idx: int = 0  # shared accross iterations, so can't parallelise the loop
     for old_idx in range(0, num_old):
         i: int = indices[old_idx, 0]
         j: int = indices[old_idx, 1]
@@ -852,27 +883,26 @@ def _remove_matched_indices(data, indices, num_fewer):
             new_indices[new_idx] = [i, j]
             new_idx += 1
 
-    assert(new_idx == new_size)
+    assert new_idx == new_size
 
     return new_indices
 
 
-@_numba.jit(nopython=True, fastmath=True, nogil=True,
-            parallel=True, cache=True)
+@_numba.jit(nopython=True, fastmath=True, nogil=True, parallel=True, cache=True)
 def _create_matrix(pattern, matrix):
     """Create the stencil matrix for this pattern, based on the
-       current value of the combined stencil matrix (i.e. only
-       cover up holes that are not already covered
+    current value of the combined stencil matrix (i.e. only
+    cover up holes that are not already covered
     """
     n = len(pattern)
 
-    m = _np.zeros((n, n), _np.int8)
+    m = _np.zeros((n, n), _np.int64)
 
     for i in _numba.prange(0, n):
         ival = pattern[i]
 
         if ival != -1:
-            for j in range(i+1, n):
+            for j in range(i + 1, n):
                 jval = pattern[j]
 
                 # If this cell in the matrix is currently set to zero,
@@ -886,30 +916,28 @@ def _create_matrix(pattern, matrix):
     return m
 
 
-@_numba.jit(nopython=True, fastmath=True, nogil=True,
-            parallel=True, cache=True)
+@_numba.jit(nopython=True, fastmath=True, nogil=True, parallel=True, cache=True)
 def _calculate_score(matrix):
     ncols: int = matrix.shape[1]
 
     test_score: int = 0
 
     for i in _numba.prange(0, ncols):
-        for j in range(i+1, ncols):
+        for j in range(i + 1, ncols):
             test_score += matrix[i, j]
 
     return test_score
 
 
-@_numba.jit(nopython=True, fastmath=True, nogil=True,
-            parallel=False, cache=True)
+@_numba.jit(nopython=True, fastmath=True, nogil=True, parallel=False, cache=True)
 def _get_unresolved(matrix):
     ncols: int = matrix.shape[1]
 
-    unresolved = _np.zeros((ncols, 2), _np.int32)
+    unresolved = _np.zeros((ncols, 2), _np.int64)
     num_unresolved: int = 0
 
     for i in range(0, ncols):
-        for j in range(i+1, ncols):
+        for j in range(i + 1, ncols):
             if matrix[i, j] == 0:
                 unresolved[num_unresolved, 0] = i
                 unresolved[num_unresolved, 1] = j
@@ -918,29 +946,31 @@ def _get_unresolved(matrix):
     return (num_unresolved, unresolved)
 
 
-def get_unresolved(patterns: Patterns,
-                   best_patterns: _List[_Tuple[int, int]],
-                   print_progress: bool = False):
+def get_unresolved(
+    patterns: Patterns,
+    best_patterns: _List[_Tuple[int, int]],
+    print_progress: bool = False,
+):
     """Return the IDs of any of the varieties that are
-       not resolved by the set of best patterns output
-       by the 'find_best_patterns' function.
+    not resolved by the set of best patterns output
+    by the 'find_best_patterns' function.
 
-       patterns: Patterns
-           The input data to process
+    patterns: Patterns
+        The input data to process
 
-       best_patterns: List[Tuple[int, int]]
-           The collection of best patterns output from the
-           find_best_patterns function
+    best_patterns: List[Tuple[int, int]]
+        The collection of best patterns output from the
+        find_best_patterns function
 
-       returns: List[Tuple[str, str]]
-           The lists of pairs of varieties that cannot be
-           distinguished from one another. The names
-           of the varieties are returned
+    returns: List[Tuple[str, str]]
+        The lists of pairs of varieties that cannot be
+        distinguished from one another. The names
+        of the varieties are returned
     """
     ncols: int = len(patterns.varieties)
 
     # first, build the matrix of what is resolved
-    matrix = _np.zeros((ncols, ncols), _np.int8)
+    matrix = _np.zeros((ncols, ncols), _np.int64)
 
     if print_progress:
         print("Identifying unresolved varieties...")
@@ -948,8 +978,7 @@ def get_unresolved(patterns: Patterns,
     else:
         progress = _no_progress_bar
 
-    for i in progress(range(0, len(best_patterns)), delay=1,
-                      unit="patterns"):
+    for i in progress(range(0, len(best_patterns)), delay=1, unit="patterns"):
         (pattern, score) = best_patterns[i]
         matrix += _create_matrix(patterns.patterns[pattern], matrix)
 
@@ -975,52 +1004,56 @@ def get_unresolved(patterns: Patterns,
     return result
 
 
-def find_best_patterns(patterns: Patterns,
-                       print_progress: bool = False) -> _List[_Tuple[int,
-                                                                     int]]:
+def find_best_patterns(
+    patterns: Patterns, print_progress: bool = False
+) -> _List[_Tuple[int, int]]:
     """This is the main function where we iterate through all of the
-       available rows of SNP data and find the one that adds the most
-       new "1s" to the overall scoring matrix. This function will return
-       when the current_score value is zero - i.e. adding
-       another row doesn't add anything to the overall matrix score.
+    available rows of SNP data and find the one that adds the most
+    new "1s" to the overall scoring matrix. This function will return
+    when the current_score value is zero - i.e. adding
+    another row doesn't add anything to the overall matrix score.
 
-       This returns the best patterns with their associated score,
-       as a list of tuples, e.g.
+    This returns the best patterns with their associated score,
+    as a list of tuples, e.g.
 
-       [ (index of best pattern, score of best pattern),
-         (index of second best pattern, score of second best pattern),
-         ...
-         (index of last pattern, score of last pattern)
-       ]
+    [ (index of best pattern, score of best pattern),
+      (index of second best pattern, score of second best pattern),
+      ...
+      (index of last pattern, score of last pattern)
+    ]
     """
 
     # create the scoring matrix
     ncols: int = len(patterns.patterns[0])
 
-    perfect_score: int = int((ncols * (ncols-1)) / 2)
+    perfect_score: int = int((ncols * (ncols - 1)) / 2)
 
     # estimate the best score...
     if print_progress:
         print("\nCalculating the best possible score...")
 
     best_possible_score: int = calculate_best_possible_score(
-                                    patterns, print_progress=print_progress)
+        patterns, print_progress=print_progress
+    )
 
     if print_progress:
-        print(f"The best possible score is {best_possible_score}. This would "
-              f"resolve {100.0*best_possible_score/perfect_score:.4f}% "
-              "of varieties.")
+        print(
+            f"The best possible score is {best_possible_score}. This would "
+            f"resolve {100.0 * best_possible_score / perfect_score:.4f}% "
+            "of varieties."
+        )
 
     if print_progress:
-        print(f"\n{perfect_score} varietal comparisons of which "
-              f"{best_possible_score} can be resolved.")
+        print(
+            f"\n{perfect_score} varietal comparisons of which "
+            f"{best_possible_score} can be resolved."
+        )
         print("\nIteration\tCumulativeResolved\tProportion\tMarkerID\tPattern")
 
     # now find the intrinsic scores of all of the patterns
-    skip_patterns = _np.zeros(len(patterns.patterns), _np.int8)
+    skip_patterns = _np.zeros(len(patterns.patterns), _np.int64)
 
-    scores = _first_score_patterns(patterns.patterns, skip_patterns,
-                                   print_progress)
+    scores = _first_score_patterns(patterns.patterns, skip_patterns, print_progress)
 
     # get the sorted list of these scores - this is an array of indicies
     # into the scores / patterns lists
@@ -1039,21 +1072,24 @@ def find_best_patterns(patterns: Patterns,
     scores[best_pattern] = 0
     skip_patterns[best_pattern] = 1
 
-
     # number of elements that can still distinguish varieties
     nremain = perfect_score - best_score
 
     # create a list indicies representing a sparse matrix containing the elements
     # can be still be used to distinguish varieties
-    remaining_indices = _unmatched_element_indices(patterns.patterns[best_pattern], nremain)
+    remaining_indices = _unmatched_element_indices(
+        patterns.patterns[best_pattern], nremain
+    )
 
     if print_progress:
         pattern = _get_pattern_from_array(patterns.patterns[best_pattern])
         pattern_id = patterns.ids[best_pattern]
 
-        print(f"1\t{cumulative_score}\t"
-              f"{100.0*proportion_resolved:.4f}%\t"
-              f"{pattern_id}\t{pattern}")
+        print(
+            f"1\t{cumulative_score}\t"
+            f"{100.0 * proportion_resolved:.4f}%\t"
+            f"{pattern_id}\t{pattern}"
+        )
         print(f"Best score from this iteration is {best_score}.")
 
     # we know that scores can only go down, so iterate through the remaining
@@ -1062,9 +1098,14 @@ def find_best_patterns(patterns: Patterns,
     while current_score > 0:
         iteration += 1
 
-        sorted_idxs = _rescore_patterns(patterns.patterns, remaining_indices,
-                                        skip_patterns, scores, sorted_idxs,
-                                        print_progress)
+        sorted_idxs = _rescore_patterns(
+            patterns.patterns,
+            remaining_indices,
+            skip_patterns,
+            scores,
+            sorted_idxs,
+            print_progress,
+        )
 
         best_pattern = sorted_idxs[0]
         best_score = scores[best_pattern]
@@ -1077,15 +1118,18 @@ def find_best_patterns(patterns: Patterns,
             scores[best_pattern] = 0
             skip_patterns[best_pattern] = 1
 
-            remaining_indices = _remove_matched_indices(patterns.patterns[best_pattern], remaining_indices, best_score)
+            remaining_indices = _remove_matched_indices(
+                patterns.patterns[best_pattern], remaining_indices, best_score
+            )
             if print_progress:
-                pattern = _get_pattern_from_array(
-                                patterns.patterns[best_pattern])
+                pattern = _get_pattern_from_array(patterns.patterns[best_pattern])
                 pattern_id = patterns.ids[best_pattern]
 
-                print(f"{iteration}\t{cumulative_score}\t"
-                      f"{100.0*proportion_resolved:.4f}%\t"
-                      f"{pattern_id}\t{pattern}")
+                print(
+                    f"{iteration}\t{cumulative_score}\t"
+                    f"{100.0 * proportion_resolved:.4f}%\t"
+                    f"{pattern_id}\t{pattern}"
+                )
                 print(f"Best score from this iteration is {best_score}.")
 
             if cumulative_score == best_possible_score:
@@ -1094,14 +1138,16 @@ def find_best_patterns(patterns: Patterns,
         current_score: int = best_score
 
     if cumulative_score != best_possible_score:
-        print("\n\nWARNING: The algorithm should have been able to find a set "
-              f"of patterns that resolved {best_possible_score} varieties "
-              f"but was only able to resolve {cumulative_score} varieties. "
-              "This suggests a bug or error in the program!\n")
+        print(
+            "\n\nWARNING: The algorithm should have been able to find a set "
+            f"of patterns that resolved {best_possible_score} varieties "
+            f"but was only able to resolve {cumulative_score} varieties. "
+            "This suggests a bug or error in the program!\n"
+        )
 
     # validate that the selected best patterns do indeed distinguish
     # the correct number of varieties
-    matrix = _np.zeros((ncols, ncols), _np.int8)
+    matrix = _np.zeros((ncols, ncols), _np.int64)
 
     last_score: int = 0
 
@@ -1111,8 +1157,7 @@ def find_best_patterns(patterns: Patterns,
     else:
         progress = _no_progress_bar
 
-    for i in progress(range(0, len(best_patterns)), delay=1,
-                      unit="patterns"):
+    for i in progress(range(0, len(best_patterns)), delay=1, unit="patterns"):
         (pattern, score) = best_patterns[i]
 
         matrix += _create_matrix(patterns.patterns[pattern], matrix)
@@ -1120,20 +1165,23 @@ def find_best_patterns(patterns: Patterns,
         test_score = _calculate_score(matrix)
 
         if test_score - last_score != score:
-            print(f"WARNING: {patterns.ids[pattern]} "
-                  f"{test_score-last_score} vs {score}")
+            print(
+                f"WARNING: {patterns.ids[pattern]} {test_score - last_score} vs {score}"
+            )
 
     if test_score != best_possible_score:
-        print("\n\nWARNING: The patterns selected by the algorithm do not "
-              f"give a total score ({test_score}) that is equal to the "
-              "best possible score that should have been attainable "
-              f"({best_possible_score}). This suggests a bug or error "
-              "in the program!\n")
+        print(
+            "\n\nWARNING: The patterns selected by the algorithm do not "
+            f"give a total score ({test_score}) that is equal to the "
+            "best possible score that should have been attainable "
+            f"({best_possible_score}). This suggests a bug or error "
+            "in the program!\n"
+        )
 
     elif print_progress:
         print("All good!")
 
-        ncomparisons: int = int(len(best_patterns) * ncols * (ncols-1) / 2)
+        ncomparisons: int = int(len(best_patterns) * ncols * (ncols - 1) / 2)
 
         print(f"\n{ncomparisons} comparisons.")
 
@@ -1156,17 +1204,16 @@ def find_best_patterns(patterns: Patterns,
         if len(unresolved_varieties) == 0:
             print(f"All {ncols} varieties resolved.")
         else:
-            print(f"{len(unresolved_varieties)} of {ncols} varieties "
-                  "unresolved.")
+            print(f"{len(unresolved_varieties)} of {ncols} varieties unresolved.")
 
     return best_patterns
 
 
-def write_markers_to_file(filename: str,
-                          patterns: Patterns,
-                          best_patterns: _List[_Tuple[int, int]]):
+def write_markers_to_file(
+    filename: str, patterns: Patterns, best_patterns: _List[_Tuple[int, int]]
+):
     """Write the selected markers in 'best_patterns' from 'patterns'
-       to the output file 'filename'.
+    to the output file 'filename'.
     """
     with open(filename, "w") as FILE:
         FILE.write("CumulativeResolved\tMarkerID\tGenotypePattern\n")
@@ -1177,11 +1224,11 @@ def write_markers_to_file(filename: str,
             FILE.write(f"{score}\t{pid}\t{pattern}\n")
 
 
-def write_markers_with_headers_to_file(filename: str,
-                                       patterns: Patterns,
-                                       best_patterns: _List[_Tuple[int, int]]):
+def write_markers_with_headers_to_file(
+    filename: str, patterns: Patterns, best_patterns: _List[_Tuple[int, int]]
+):
     """Write the selected markers in 'best_patterns' from 'patterns'
-       to the output file 'filename'
+    to the output file 'filename'
     """
     with open(filename, "w") as FILE:
         header = "\t".join(patterns.varieties)
@@ -1189,8 +1236,9 @@ def write_markers_with_headers_to_file(filename: str,
 
         for idx, _ in best_patterns:
             FILE.write(f"{patterns.ids[idx]}\t")
-            FILE.write("\t".join([str(x) if x >= 0 else "x"
-                                  for x in patterns.patterns[idx]]))
+            FILE.write(
+                "\t".join([str(x) if x >= 0 else "x" for x in patterns.patterns[idx]])
+            )
             FILE.write("\n")
 
 
@@ -1198,47 +1246,71 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(
-                prog="select_minimal_markers.py",
-                description="Find the minimal set "
-                            "of markers needed to distinguish between "
-                            "varieties."
-                            )
+        prog="select_minimal_markers.py",
+        description="Find the minimal set "
+        "of markers needed to distinguish between "
+        "varieties.",
+    )
 
-    parser.add_argument("input_file", metavar="input_file",
-                        type=str, nargs=1,
-                        help="The input file containing the markers "
-                             "to be processed.")
+    parser.add_argument(
+        "input_file",
+        metavar="input_file",
+        type=str,
+        nargs=1,
+        help="The input file containing the markers to be processed.",
+    )
 
-    parser.add_argument("--min_call_rate", nargs="?", type=float, default=0.9,
-                        const=1,
-                        help="The minimum call rate needed of a pattern "
-                             "to make it worth processing. "
-                             f"Default value is 0.9.")
+    parser.add_argument(
+        "--min_call_rate",
+        nargs="?",
+        type=float,
+        default=0.9,
+        const=1,
+        help="The minimum call rate needed of a pattern "
+        "to make it worth processing. "
+        f"Default value is 0.9.",
+    )
 
-    parser.add_argument("--min_maf", nargs="?", type=float, default=0.001,
-                        const=1,
-                        help="The minimum Minor Allele Frequency of a "
-                             "pattern needed to make it worth processing. "
-                             f"Default value is 0.001.")
+    parser.add_argument(
+        "--min_maf",
+        nargs="?",
+        type=float,
+        default=0.001,
+        const=1,
+        help="The minimum Minor Allele Frequency of a "
+        "pattern needed to make it worth processing. "
+        f"Default value is 0.001.",
+    )
 
-    parser.add_argument("--max_markers", nargs="?", type=int,
-                        default=1000000000000, const=1,
-                        help="The maximum number of markers to process. "
-                             "Markers are first sorted by MAF, so any "
-                             "markers with a low MAF after max_markers "
-                             "will be discarded before processing. Default "
-                             f"value is 1000000000000.")
+    parser.add_argument(
+        "--max_markers",
+        nargs="?",
+        type=int,
+        default=1000000000000,
+        const=1,
+        help="The maximum number of markers to process. "
+        "Markers are first sorted by MAF, so any "
+        "markers with a low MAF after max_markers "
+        "will be discarded before processing. Default "
+        f"value is 1000000000000.",
+    )
 
-    parser.add_argument("--vcf", action="store_true",
-                        help="Read the input file in VCF format. Note that "
-                             "this will first convert the file into "
-                             "the internal format, save that to disk "
-                             "using the filename '{input_file}.genotypes' "
-                             "and will run the program against the "
-                             "converted file.")
+    parser.add_argument(
+        "--vcf",
+        action="store_true",
+        help="Read the input file in VCF format. Note that "
+        "this will first convert the file into "
+        "the internal format, save that to disk "
+        "using the filename '{input_file}.genotypes' "
+        "and will run the program against the "
+        "converted file.",
+    )
 
-    parser.add_argument("--silent", action="store_true",
-                        help="Silence all output written to the console.")
+    parser.add_argument(
+        "--silent",
+        action="store_true",
+        help="Silence all output written to the console.",
+    )
 
     args = parser.parse_args()
 
@@ -1249,6 +1321,7 @@ if __name__ == "__main__":
 
         if input_file is None:
             import sys
+
             sys.exit(-1)
 
     if args.silent:
@@ -1256,30 +1329,32 @@ if __name__ == "__main__":
     else:
         print_progress = True
 
-    patterns = load_patterns(input_file,
-                             min_call_rate=args.min_call_rate,
-                             min_maf=args.min_maf,
-                             max_markers=args.max_markers,
-                             print_progress=print_progress)
+    patterns = load_patterns(
+        input_file,
+        min_call_rate=args.min_call_rate,
+        min_maf=args.min_maf,
+        max_markers=args.max_markers,
+        print_progress=print_progress,
+    )
 
     if patterns is None:
         best_patterns = []
         matrix = None
         import sys
+
         sys.exit(-1)
     else:
-        best_patterns = find_best_patterns(patterns,
-                                           print_progress=print_progress)
+        best_patterns = find_best_patterns(patterns, print_progress=print_progress)
 
     if print_progress:
         print(f"\nProcessing complete! Writing output")
 
     import os
+
     base = os.path.splitext(input_file)[0]
 
-    write_markers_to_file(f"{base}_minimal_markers.txt",
-                          patterns, best_patterns)
+    write_markers_to_file(f"{base}_minimal_markers.txt", patterns, best_patterns)
 
     write_markers_with_headers_to_file(
-        f"{base}_selected_markers_with_headers.txt",
-        patterns, best_patterns)
+        f"{base}_selected_markers_with_headers.txt", patterns, best_patterns
+    )
